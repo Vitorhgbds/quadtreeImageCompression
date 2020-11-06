@@ -1,6 +1,7 @@
 #include "quadtree.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -29,6 +30,8 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
     // Converte o vetor RGB para uma MATRIZ que pode acessada por pixels[linha][coluna]
     RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
 
+    
+
     // Veja como acessar os primeiros 10 pixels da imagem, por exemplo:
     int i;
     for(i=0; i<10; i++)
@@ -37,9 +40,11 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
     int width = pic->width;
     int height = pic->height;
 
-    //////////////////////////////////////////////////////////////////////////
-    // Implemente aqui o algoritmo que gera a quadtree, retornando o nodo raiz
-    //////////////////////////////////////////////////////////////////////////
+
+
+    QuadNode* raiz = newNode(0,0,width,height);
+
+
 
 // COMENTE a linha abaixo quando seu algoritmo ja estiver funcionando
 // Caso contrario, ele ira gerar uma arvore de teste com 3 nodos
@@ -57,7 +62,7 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
     raiz->color[1] = 0;
     raiz->color[2] = 255;
 
-    QuadNode* nw = newNode(width/2,0,width/2,height/2);
+    QuadNode* nw = newNode(raiz->width/2,0,raiz->width/2,raiz->height/2);
     nw->status = PARCIAL;
     nw->color[0] = 0;
     nw->color[1] = 0;
@@ -78,6 +83,36 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
 #endif
     // Finalmente, retorna a raiz da árvore
     return raiz;
+}
+
+float calculaCorMedia(RGB pixels[][],int height, int width){
+    RGB corMedia;
+    corMedia.r = corMedia.g = corMedia.b = 0;
+
+    float diferenca = 0;
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Implemente aqui o algoritmo que gera a quadtree, retornando o nodo raiz //
+    /////////////////////////////////////////////////////////////////////////////
+    for(int i = 0; i < pic->height; i++){
+        for(int j = 0; j < pic->width; j++){
+            corMedia.r += pixels[i][j]->r;
+            corMedia.g += pixels[i][j]->g;
+            corMedia.b += pixels[i][j]->b;
+        }
+    }
+
+    corMedia.r = corMedia.r/(width*height);
+    corMedia.g = corMedia.g/(width*height);
+    corMedia.b = corMedia.b/(width*height);
+
+    for(int i = 0; i < pic->height; i++){
+        for(int j = 0; j < pic->width; j++){
+            diferenca += sqrt(pow(pixels[i][j]->r - corMedia.r,2) + pow(pixels[i][j]->g - corMedia.g,2) + pow(pixels[i][j]->b - corMedia.b,2));
+        }
+    }
+
+    diferenca = diferenca/(width*height);
 }
 
 // Limpa a memória ocupada pela árvore
