@@ -1,0 +1,5 @@
+mingw32-make -f Makefile.mk
+
+.\quadtree.exe + {nome_do_arquivo.formato}
+
+para rodar no windows
