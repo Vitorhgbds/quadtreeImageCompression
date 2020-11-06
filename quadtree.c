@@ -27,6 +27,9 @@ QuadNode* newNode(int x, int y, int width, int height)
 
 QuadNode* geraQuadtree(Img* pic, float minDetail)
 {
+    float corMedia = 0;
+    
+    
     // Converte o vetor RGB para uma MATRIZ que pode acessada por pixels[linha][coluna]
     RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
 
@@ -40,14 +43,23 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
     int width = pic->width;
     int height = pic->height;
 
+    corMedia = calculaCorMedia(pixels, height, width);
 
 
-    QuadNode* raiz = newNode(0,0,width,height);
+
+
+    
+
+
 
 
 
 // COMENTE a linha abaixo quando seu algoritmo ja estiver funcionando
 // Caso contrario, ele ira gerar uma arvore de teste com 3 nodos
+
+// 0 até 40 -> CHEIO
+//41 até 230 -> PARCIAL
+//231 até 255 -> NULL
 
 #define DEMO
 #ifdef DEMO
@@ -62,23 +74,24 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
     raiz->color[1] = 0;
     raiz->color[2] = 255;
 
-    QuadNode* nw = newNode(raiz->width/2,0,raiz->width/2,raiz->height/2);
-    nw->status = PARCIAL;
-    nw->color[0] = 0;
-    nw->color[1] = 0;
-    nw->color[2] = 255;
+    //NE
+    QuadNode* ne = newNode(raiz->width/2,0,raiz->width/2,raiz->height/2);
+    ne->status = PARCIAL;
+    ne->color[0] = 0;
+    ne->color[1] = 0;
+    ne->color[2] = 255;
 
     // Aponta da raiz para o nodo nw
-    raiz->NW = nw;
+    raiz->NE = ne;
 
-    QuadNode* nw2 = newNode(width/2+width/4,0,width/4,height/4);
-    nw2->status = CHEIO;
-    nw2->color[0] = 255;
-    nw2->color[1] = 0;
-    nw2->color[2] = 0;
+    QuadNode* ne2 = newNode(width/2+width/4,0,width/4,height/4);
+    ne2->status = CHEIO;
+    ne2->color[0] = 255;
+    ne2->color[1] = 0;
+    ne2->color[2] = 0;
 
     // Aponta do nodo nw para o nodo nw2
-    nw->NW = nw2;
+    ne->NE = ne2;
 
 #endif
     // Finalmente, retorna a raiz da árvore
@@ -94,8 +107,8 @@ float calculaCorMedia(RGB pixels[][],int height, int width){
     /////////////////////////////////////////////////////////////////////////////
     // Implemente aqui o algoritmo que gera a quadtree, retornando o nodo raiz //
     /////////////////////////////////////////////////////////////////////////////
-    for(int i = 0; i < pic->height; i++){
-        for(int j = 0; j < pic->width; j++){
+    for(int i = 0; i < height; i++){
+        for(int j = 0; j < width; j++){
             corMedia.r += pixels[i][j]->r;
             corMedia.g += pixels[i][j]->g;
             corMedia.b += pixels[i][j]->b;
@@ -106,13 +119,15 @@ float calculaCorMedia(RGB pixels[][],int height, int width){
     corMedia.g = corMedia.g/(width*height);
     corMedia.b = corMedia.b/(width*height);
 
-    for(int i = 0; i < pic->height; i++){
-        for(int j = 0; j < pic->width; j++){
+    for(int i = 0; i < height; i++){
+        for(int j = 0; j < width; j++){
             diferenca += sqrt(pow(pixels[i][j]->r - corMedia.r,2) + pow(pixels[i][j]->g - corMedia.g,2) + pow(pixels[i][j]->b - corMedia.b,2));
         }
     }
 
     diferenca = diferenca/(width*height);
+
+    return diferenca;
 }
 
 // Limpa a memória ocupada pela árvore
