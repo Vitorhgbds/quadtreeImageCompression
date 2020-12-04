@@ -12,9 +12,9 @@
 unsigned int first = 1;
 char desenhaBorda = 1;
 
-float calculateLevelDetailOfRegion(Img* pic, QuadNode* region);
+float calculateLevelDetailOfRegion(Img* pic, QuadNode* region, int minDetail);
 QuadNode* newNode(int x, int y, int width, int height);
-QuadNode* geraQuadTreeAux(QuadNode* root, int minDetail, Img* pic, int actualDetail);
+QuadNode* geraQuadTreeAux(QuadNode* root, int minDetail, Img* pic);
 QuadNode* geraQuadtree(Img* pic, float minDetail);
 void drawTree(QuadNode* raiz);
 
@@ -31,64 +31,45 @@ QuadNode* newNode(int x, int y, int width, int height)
     return n;
 }
 
-QuadNode* geraQuadTreeAux(QuadNode* root, int minDetail, Img* pic, int actualDetail){
-    actualDetail++;
-    RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
-
-    float regionDetail = calculateLevelDetailOfRegion(pic, root);
-    if(regionDetail <= 40){
-        root->status = CHEIO;
-    } else if( regionDetail >= 231){
-        root->status = NULL;
+QuadNode* geraQuadTreeAux(QuadNode* root, int minDetail, Img* pic){
+    calculateLevelDetailOfRegion(pic, root,minDetail);
+    
+    if(root->status == PARCIAL){
+        root->NW = geraQuadTreeAux(newNode(root->x,root->y,root->width/2,root->height/2), minDetail, pic);
+        root->NE = geraQuadTreeAux(newNode(root->x + root->width/2,root->y,root->width/2,root->height/2), minDetail, pic);
+        root->SW = geraQuadTreeAux(newNode(root->x,root->y + root->height/2,root->width/2,root->height/2), minDetail, pic);
+        root->SE = geraQuadTreeAux(newNode(root->x + root->width/2,root->y + root->height/2,root->width/2,root->height/2), minDetail, pic);
     }
-
-    root->status = PARCIAL;
-    if(actualDetail < minDetail){
-        root->NW = geraQuadTreeAux(newNode(root->x,root->y,root->width/2,root->height/2), minDetail, pic, actualDetail);
-        root->NE = geraQuadTreeAux(newNode(root->width/2,root->y,root->width/2,root->height/2), minDetail, pic, actualDetail);
-        root->SW = geraQuadTreeAux(newNode(root->x,root->height/2,root->width/2,root->height/2), minDetail, pic, actualDetail);
-        root->SE = geraQuadTreeAux(newNode(root->width/2,root->height/2,root->width/2,root->height/2), minDetail, pic, actualDetail);
-    }
-    free(pixels);
     return root;
 }
 
 QuadNode* geraQuadtree(Img* pic, float minDetail)
 {   
     // Converte o vetor RGB para uma MATRIZ que pode acessada por pixels[linha][coluna]
-    RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
+    //RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
 
     // Veja como acessar os primeiros 10 pixels da imagem, por exemplo:
-    int i;
-    for(i=0; i<10; i++)
-        printf("%02X %02X %02X\n",pixels[0][i].r,pixels[1][i].g,pixels[2][i].b);
+    //int i;
+    //for(i=0; i<10; i++)
+    //    printf("%02X %02X %02X\n",pixels[0][i].r,pixels[1][i].g,pixels[2][i].b);
 
     QuadNode* root = newNode(0,0,pic->width,pic->height);
-
-    float levelDetail = calculateLevelDetailOfRegion(pic, root);
-
-    if(levelDetail <= 40){
-        root->status = CHEIO;
-    } else if( levelDetail >= 231){
-        root->status = NULL;
-    }
-
-    root->status = PARCIAL;
-    if( minDetail > 0){
-        root->NW = geraQuadTreeAux(newNode(root->x,root->y,root->width/2,root->height/2), levelDetail, pic, 0);
-        root->NE = geraQuadTreeAux(newNode(root->width/2,root->y,root->width/2,root->height/2), levelDetail, pic, 0);
-        root->SW = geraQuadTreeAux(newNode(root->x,root->height/2,root->width/2,root->height/2), levelDetail, pic, 0);
-        root->SE = geraQuadTreeAux(newNode(root->width/2,root->height/2,root->width/2,root->height/2), levelDetail, pic, 0);
+    calculateLevelDetailOfRegion(pic, root,minDetail);
+    printf("%d\n", root->status);
+    printf("%d\n", root->color[0]);
+    printf("%d\n", root->color[1]);
+    printf("%d\n", root->color[2]);
+    if( root->status == PARCIAL){
+        root->NW = geraQuadTreeAux(newNode(root->x,root->y,root->width/2,root->height/2), minDetail, pic);
+        root->NE = geraQuadTreeAux(newNode(root->x + root->width/2,root->y,root->width/2,root->height/2), minDetail, pic);
+        root->SW = geraQuadTreeAux(newNode(root->x,root->y + root->height/2,root->width/2,root->height/2), minDetail, pic);
+        root->SE = geraQuadTreeAux(newNode(root->x + root->width/2,root->y + root->height/2,root->width/2,root->height/2), minDetail, pic);
     }
 
 
 
 // COMENTE a linha abaixo quando seu algoritmo ja estiver funcionando
 // Caso contrario, ele ira gerar uma arvore de teste com 3 nodos
-
-// 0 até 40 -> CHEIO
-//41 até 230 -> PARCIAL
-//231 até 255 -> NULL
 
 //#define DEMO
 #ifdef DEMO
@@ -127,44 +108,46 @@ QuadNode* geraQuadtree(Img* pic, float minDetail)
 
 #endif
     // Finalmente, retorna a raiz da árvore
-    free(pixels);
     drawTree(root);
     return root;
 }
 
-float calculateLevelDetailOfRegion(Img* pic, QuadNode* region){
-    region->color[0] = region->color[1] = region->color[2] = 0;
-
+float calculateLevelDetailOfRegion(Img* pic, QuadNode* region, int minDetail){
     RGB (*pixels)[pic->width] = (RGB(*)[pic->width]) pic->img;
 
-    float diferenca = 0;
-
-    for(int i = region->y; i < region->height; i++){
-        for(int j = region->x; j < region->width; j++){
-            region->color[0] += pixels[i][j].r;
-            region->color[1] += pixels[i][j].g;
-            region->color[2] += pixels[i][j].b;
+    double diferenca = 0;
+    double meR = 0;
+    double meG = 0;
+    double meB = 0;
+    for(int i = region->y; i < region->y + region->height; i++){
+        for(int j = region->x; j < region->x + region->width; j++){
+            meR += pixels[i][j].r;
+            meG += pixels[i][j].g;
+            meB += pixels[i][j].b;
         }
     }
 
-    float area = region->height * region->width;
+    int area = region->height * region->width;
 
-    region->color[0] = region->color[0]/(area);
-    region->color[1] = region->color[1]/(area);
-    region->color[2] = region->color[2]/(area);
+    region->color[0] = (int) meR/(area);
+    region->color[1] = (int) meG/(area);
+    region->color[2] = (int) meB/(area);
 
-    for(int i = region->y; i < region->height; i++){
-        for(int j = region->x; j < region->width; j++){
+    for(int i = region->y; i < region->y + region->height; i++){
+        for(int j = region->x; j < region->x + region->width; j++){
             diferenca += sqrt(pow(pixels[i][j].r - region->color[0],2) + pow(pixels[i][j].g - region->color[1],2) + pow(pixels[i][j].b - region->color[2],2));
         }
     }
 
     diferenca = diferenca/(area);
-    free(pixels);
-    printf("%f",diferenca);
-    printf("%d",(int)region->color[0]);
-    printf("%d",(int)region->color[1]);
-    printf("%d",(int)region->color[2]);
+    region-> status = (diferenca <= minDetail) ? CHEIO : PARCIAL;
+    //printf("%f\n",diferenca);
+    //printf("CHEIO %d\n",CHEIO);
+    //printf("PARCIAL %d\n",PARCIAL);
+
+    //printf("%d\n",region->color[0]);
+    //printf("%d\n",region->color[1]);
+    //printf("%d\n",region->color[2]);
     return diferenca;
 }
 
